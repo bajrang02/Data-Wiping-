@@ -46,53 +46,80 @@ class MultiAssetWipeApp:
         tk.Label(header, text="🛡️ Multi-Asset Secure Data Wipe System",
                 font=("Arial", 24, "bold"), bg="#0f172a", fg="#60a5fa").pack(pady=25)
         
-        # Main container
+        # Main container with proper weight distribution
         main = tk.Frame(self.root, bg="#1e293b")
         main.pack(fill=tk.BOTH, expand=True, padx=20, pady=20)
         
-        # Left: Asset Entry
-        left = tk.Frame(main, bg="#334155", width=420)
-        left.pack(side=tk.LEFT, fill=tk.BOTH, padx=(0, 10))
-        left.pack_propagate(False)
+        # Configure grid for responsive layout
+        main.grid_rowconfigure(0, weight=1)
+        main.grid_columnconfigure(0, weight=0, minsize=400)  # Left panel fixed width
+        main.grid_columnconfigure(1, weight=1)  # Right panel expands
         
-        tk.Label(left, text="Add Asset to Wipe Queue", font=("Arial", 16, "bold"),
+        # Left: Asset Entry with Scrollbar
+        left_container = tk.Frame(main, bg="#334155")
+        left_container.grid(row=0, column=0, sticky="nsew", padx=(0, 10))
+        
+        # Canvas for scrolling
+        left_canvas = tk.Canvas(left_container, bg="#334155", highlightthickness=0, width=400)
+        left_scrollbar = ttk.Scrollbar(left_container, orient="vertical", command=left_canvas.yview)
+        left_scrollable = tk.Frame(left_canvas, bg="#334155")
+        
+        left_scrollable.bind(
+            "<Configure>",
+            lambda e: left_canvas.configure(scrollregion=left_canvas.bbox("all"))
+        )
+        
+        left_canvas.create_window((0, 0), window=left_scrollable, anchor="nw")
+        left_canvas.configure(yscrollcommand=left_scrollbar.set)
+        
+        # Pack canvas and scrollbar
+        left_canvas.pack(side=tk.LEFT, fill=tk.BOTH, expand=True)
+        left_scrollbar.pack(side=tk.RIGHT, fill=tk.Y)
+        
+        # Enable mousewheel scrolling
+        def _on_mousewheel(event):
+            left_canvas.yview_scroll(int(-1*(event.delta/120)), "units")
+        
+        left_canvas.bind_all("<MouseWheel>", _on_mousewheel)
+        
+        tk.Label(left_scrollable, text="Add Asset to Wipe Queue", font=("Arial", 16, "bold"),
                 bg="#334155", fg="white").pack(pady=20)
         
         # Asset ID
-        tk.Label(left, text="Asset ID *", font=("Arial", 11, "bold"),
+        tk.Label(left_scrollable, text="Asset ID *", font=("Arial", 11, "bold"),
                 bg="#334155", fg="white").pack(anchor=tk.W, padx=20, pady=(10, 5))
-        self.asset_id_entry = tk.Entry(left, font=("Arial", 11), bg="#1e293b",
+        self.asset_id_entry = tk.Entry(left_scrollable, font=("Arial", 11), bg="#1e293b",
                                        fg="white", insertbackground="white")
         self.asset_id_entry.pack(fill=tk.X, padx=20, ipady=8)
         
         # Asset Type
-        tk.Label(left, text="Asset Type *", font=("Arial", 11, "bold"),
+        tk.Label(left_scrollable, text="Asset Type *", font=("Arial", 11, "bold"),
                 bg="#334155", fg="white").pack(anchor=tk.W, padx=20, pady=(10, 5))
         self.asset_type = tk.StringVar(value="Laptop")
-        type_combo = ttk.Combobox(left, textvariable=self.asset_type,
+        type_combo = ttk.Combobox(left_scrollable, textvariable=self.asset_type,
                                  values=["Laptop", "Desktop", "SSD", "HDD", "USB Drive", "Server"],
                                  state="readonly", font=("Arial", 11))
         type_combo.pack(fill=tk.X, padx=20, ipady=8)
         
         # Serial Number
-        tk.Label(left, text="Serial Number *", font=("Arial", 11, "bold"),
+        tk.Label(left_scrollable, text="Serial Number *", font=("Arial", 11, "bold"),
                 bg="#334155", fg="white").pack(anchor=tk.W, padx=20, pady=(10, 5))
-        self.serial_entry = tk.Entry(left, font=("Arial", 11), bg="#1e293b",
+        self.serial_entry = tk.Entry(left_scrollable, font=("Arial", 11), bg="#1e293b",
                                     fg="white", insertbackground="white")
         self.serial_entry.pack(fill=tk.X, padx=20, ipady=8)
         
         # Owner
-        tk.Label(left, text="Owner/Department", font=("Arial", 11, "bold"),
+        tk.Label(left_scrollable, text="Owner/Department", font=("Arial", 11, "bold"),
                 bg="#334155", fg="white").pack(anchor=tk.W, padx=20, pady=(10, 5))
-        self.owner_entry = tk.Entry(left, font=("Arial", 11), bg="#1e293b",
+        self.owner_entry = tk.Entry(left_scrollable, font=("Arial", 11), bg="#1e293b",
                                    fg="white", insertbackground="white")
         self.owner_entry.pack(fill=tk.X, padx=20, ipady=8)
         
         # Drive Path
-        tk.Label(left, text="Connected Drive Path *", font=("Arial", 11, "bold"),
+        tk.Label(left_scrollable, text="Connected Drive Path *", font=("Arial", 11, "bold"),
                 bg="#334155", fg="white").pack(anchor=tk.W, padx=20, pady=(15, 5))
         
-        path_frame = tk.Frame(left, bg="#334155")
+        path_frame = tk.Frame(left_scrollable, bg="#334155")
         path_frame.pack(fill=tk.X, padx=20)
         
         self.drive_path = tk.Entry(path_frame, font=("Arial", 11), bg="#1e293b",
@@ -112,11 +139,11 @@ class MultiAssetWipeApp:
         else:
             help_text = "e.g., /Volumes/USB"
         
-        tk.Label(left, text=help_text, font=("Arial", 9, "italic"),
+        tk.Label(left_scrollable, text=help_text, font=("Arial", 9, "italic"),
                 bg="#334155", fg="#94a3b8").pack(anchor=tk.W, padx=20, pady=(5, 0))
         
         # Wipe Standard
-        tk.Label(left, text="Wipe Standard *", font=("Arial", 11, "bold"),
+        tk.Label(left_scrollable, text="Wipe Standard *", font=("Arial", 11, "bold"),
                 bg="#334155", fg="white").pack(anchor=tk.W, padx=20, pady=(15, 5))
         
         self.wipe_standard = tk.StringVar(value="DoD 5220.22-M (3 passes)")
@@ -129,33 +156,40 @@ class MultiAssetWipeApp:
         ]
         
         for name, desc in standards:
-            rb = tk.Radiobutton(left, text=name, variable=self.wipe_standard,
+            rb = tk.Radiobutton(left_scrollable, text=name, variable=self.wipe_standard,
                               value=name, font=("Arial", 10, "bold"),
                               bg="#334155", fg="white", selectcolor="#1e293b")
             rb.pack(anchor=tk.W, padx=25, pady=2)
-            tk.Label(left, text=desc, font=("Arial", 8),
+            tk.Label(left_scrollable, text=desc, font=("Arial", 8),
                     bg="#334155", fg="#94a3b8").pack(anchor=tk.W, padx=45)
         
         # Buttons
-        btn_frame = tk.Frame(left, bg="#334155")
-        btn_frame.pack(pady=20)
+        btn_frame = tk.Frame(left_scrollable, bg="#334155")
+        btn_frame.pack(pady=20, fill=tk.X, padx=20)
         
         tk.Button(btn_frame, text="➕ Add to Queue", command=self.add_to_queue,
                  bg="#22c55e", fg="white", font=("Arial", 11, "bold"),
-                 padx=20, pady=12, cursor="hand2").pack(pady=5, fill=tk.X)
+                 pady=12, cursor="hand2").pack(pady=5, fill=tk.X)
         
         tk.Button(btn_frame, text="🔄 Clear Form", command=self.clear_form,
                  bg="#6b7280", fg="white", font=("Arial", 11, "bold"),
-                 padx=20, pady=12, cursor="hand2").pack(pady=5, fill=tk.X)
+                 pady=12, cursor="hand2").pack(pady=5, fill=tk.X)
         
-        # Right: Two sections
+        # Add some padding at bottom
+        tk.Label(left_scrollable, text="", bg="#334155", height=2).pack()
+        
+        # Right: Two sections with proper resizing
         right = tk.Frame(main, bg="#1e293b")
-        right.pack(side=tk.LEFT, fill=tk.BOTH, expand=True)
+        right.grid(row=0, column=1, sticky="nsew")
+        
+        # Configure right panel grid
+        right.grid_rowconfigure(0, weight=2, minsize=250)  # Queue section
+        right.grid_rowconfigure(1, weight=3)  # Records section
+        right.grid_columnconfigure(0, weight=1)
         
         # Top: Pending Queue
-        queue_frame = tk.Frame(right, bg="#334155", height=280)
-        queue_frame.pack(fill=tk.BOTH, padx=0, pady=(0, 10))
-        queue_frame.pack_propagate(False)
+        queue_frame = tk.Frame(right, bg="#334155")
+        queue_frame.grid(row=0, column=0, sticky="nsew", pady=(0, 10))
         
         queue_header = tk.Frame(queue_frame, bg="#334155")
         queue_header.pack(fill=tk.X, pady=10)
@@ -167,18 +201,18 @@ class MultiAssetWipeApp:
                                           font=("Arial", 12), bg="#334155", fg="#94a3b8")
         self.queue_count_label.pack(side=tk.LEFT)
         
-        # Queue listbox
+        # Queue listbox with scrollbar
         queue_list_frame = tk.Frame(queue_frame, bg="#334155")
         queue_list_frame.pack(fill=tk.BOTH, expand=True, padx=20, pady=(0, 10))
         
-        queue_scroll = ttk.Scrollbar(queue_list_frame)
+        queue_scroll = ttk.Scrollbar(queue_list_frame, orient="vertical")
         queue_scroll.pack(side=tk.RIGHT, fill=tk.Y)
         
         self.queue_listbox = tk.Listbox(queue_list_frame, font=("Arial", 10),
                                         bg="#1e293b", fg="white",
                                         selectbackground="#3b82f6",
-                                        yscrollcommand=queue_scroll.set, height=8)
-        self.queue_listbox.pack(fill=tk.BOTH, expand=True)
+                                        yscrollcommand=queue_scroll.set)
+        self.queue_listbox.pack(fill=tk.BOTH, expand=True, side=tk.LEFT)
         queue_scroll.config(command=self.queue_listbox.yview)
         
         # Queue action buttons
@@ -187,41 +221,48 @@ class MultiAssetWipeApp:
         
         tk.Button(queue_btn_frame, text="🔥 WIPE ALL", command=self.wipe_all,
                  bg="#dc2626", fg="white", font=("Arial", 12, "bold"),
-                 padx=30, pady=12, cursor="hand2").pack(side=tk.LEFT, padx=5)
+                 padx=25, pady=12, cursor="hand2").pack(side=tk.LEFT, padx=5)
         
-        tk.Button(queue_btn_frame, text="❌ Remove Selected", command=self.remove_from_queue,
+        tk.Button(queue_btn_frame, text="❌ Remove", command=self.remove_from_queue,
                  bg="#ef4444", fg="white", font=("Arial", 11, "bold"),
                  padx=20, pady=12, cursor="hand2").pack(side=tk.LEFT, padx=5)
         
-        tk.Button(queue_btn_frame, text="🗑️ Clear Queue", command=self.clear_queue,
+        tk.Button(queue_btn_frame, text="🗑️ Clear", command=self.clear_queue,
                  bg="#6b7280", fg="white", font=("Arial", 11, "bold"),
                  padx=20, pady=12, cursor="hand2").pack(side=tk.LEFT, padx=5)
         
         # Bottom: Completed Records
         records_frame = tk.Frame(right, bg="#334155")
-        records_frame.pack(fill=tk.BOTH, expand=True)
+        records_frame.grid(row=1, column=0, sticky="nsew")
         
         tk.Label(records_frame, text="Completed Wipe Records", font=("Arial", 16, "bold"),
                 bg="#334155", fg="white").pack(pady=15)
         
-        # Treeview
+        # Treeview with both scrollbars
         tree_frame = tk.Frame(records_frame, bg="#334155")
         tree_frame.pack(fill=tk.BOTH, expand=True, padx=20, pady=(0, 10))
         
-        scrollbar = ttk.Scrollbar(tree_frame)
-        scrollbar.pack(side=tk.RIGHT, fill=tk.Y)
+        # Vertical scrollbar
+        v_scrollbar = ttk.Scrollbar(tree_frame, orient="vertical")
+        v_scrollbar.pack(side=tk.RIGHT, fill=tk.Y)
+        
+        # Horizontal scrollbar
+        h_scrollbar = ttk.Scrollbar(tree_frame, orient="horizontal")
+        h_scrollbar.pack(side=tk.BOTTOM, fill=tk.X)
         
         columns = ("Asset ID", "Type", "Serial", "Status", "Date", "Certificate")
         self.tree = ttk.Treeview(tree_frame, columns=columns, show="headings",
-                                yscrollcommand=scrollbar.set, height=10)
+                                yscrollcommand=v_scrollbar.set,
+                                xscrollcommand=h_scrollbar.set)
         
         widths = [110, 90, 120, 90, 130, 150]
         for col, width in zip(columns, widths):
             self.tree.heading(col, text=col)
-            self.tree.column(col, width=width, anchor=tk.CENTER)
+            self.tree.column(col, width=width, anchor=tk.CENTER, minwidth=80)
         
-        scrollbar.config(command=self.tree.yview)
-        self.tree.pack(fill=tk.BOTH, expand=True)
+        v_scrollbar.config(command=self.tree.yview)
+        h_scrollbar.config(command=self.tree.xview)
+        self.tree.pack(fill=tk.BOTH, expand=True, side=tk.LEFT)
         
         # Tags
         self.tree.tag_configure('completed', background='#d1fae5', foreground='#000')
@@ -234,16 +275,240 @@ class MultiAssetWipeApp:
                  bg="#22c55e", fg="white", font=("Arial", 11, "bold"),
                  padx=20, pady=10, cursor="hand2").pack(side=tk.LEFT, padx=5)
         
-        tk.Button(record_btn_frame, text="📤 Export All", command=self.export_records,
+        tk.Button(record_btn_frame, text="📤 Export", command=self.export_records,
                  bg="#3b82f6", fg="white", font=("Arial", 11, "bold"),
                  padx=20, pady=10, cursor="hand2").pack(side=tk.LEFT, padx=5)
         
-        tk.Button(record_btn_frame, text="🗑️ Delete Record", command=self.delete_record,
+        tk.Button(record_btn_frame, text="🗑️ Delete", command=self.delete_record,
                  bg="#ef4444", fg="white", font=("Arial", 11, "bold"),
+                 padx=20, pady=10, cursor="hand2").pack(side=tk.LEFT, padx=5)
+        
+        tk.Button(record_btn_frame, text="❓ Help", command=self.show_help,
+                 bg="#8b5cf6", fg="white", font=("Arial", 11, "bold"),
                  padx=20, pady=10, cursor="hand2").pack(side=tk.LEFT, padx=5)
         
         self.refresh_tree()
         self.update_queue_display()
+        
+        # Bind window resize event
+        self.root.bind("<Configure>", self.on_window_resize)
+    
+    def on_window_resize(self, event):
+        """Handle window resize events"""
+        # Ensure proper layout on resize
+        if event.widget == self.root:
+            self.root.update_idletasks()
+    
+    def show_help(self):
+        """Show help and contact information"""
+        help_window = tk.Toplevel(self.root)
+        help_window.title("Help & Support")
+        help_window.geometry("700x600")
+        help_window.configure(bg="#0a0e27")
+        help_window.transient(self.root)
+        
+        # Header
+        header = tk.Frame(help_window, bg="#3b82f6", height=80)
+        header.pack(fill=tk.X)
+        header.pack_propagate(False)
+        
+        tk.Label(header, text="❓ Help & Support Center",
+                font=("Arial", 20, "bold"), bg="#3b82f6", fg="white").pack(expand=True)
+        
+        # Scrollable content
+        canvas = tk.Canvas(help_window, bg="#0a0e27", highlightthickness=0)
+        scrollbar = ttk.Scrollbar(help_window, orient="vertical", command=canvas.yview)
+        scroll_frame = tk.Frame(canvas, bg="#0a0e27")
+        
+        scroll_frame.bind("<Configure>", lambda e: canvas.configure(scrollregion=canvas.bbox("all")))
+        canvas.create_window((0, 0), window=scroll_frame, anchor="nw")
+        canvas.configure(yscrollcommand=scrollbar.set)
+        
+        canvas.pack(side=tk.LEFT, fill=tk.BOTH, expand=True, padx=20, pady=20)
+        scrollbar.pack(side=tk.RIGHT, fill=tk.Y)
+        
+        # Quick Start Guide
+        self.create_help_section(scroll_frame, "🚀 Quick Start Guide", [
+            "1. Enter asset information (Asset ID, Type, Serial Number)",
+            "2. Connect the device to your computer",
+            "3. Browse and select the drive/partition path",
+            "4. Choose a wipe standard (DoD recommended)",
+            "5. Click 'Add to Queue' to add the asset",
+            "6. Repeat steps 1-5 for multiple assets",
+            "7. Click 'WIPE ALL' to start batch wiping",
+            "8. Type 'WIPE ALL' to confirm",
+            "9. Wait for completion (do not disconnect devices)",
+            "10. Generate certificates for compliance"
+        ])
+        
+        # Wipe Standards
+        self.create_help_section(scroll_frame, "🛡️ Wipe Standards Explained", [
+            "• DoD 5220.22-M (3 passes) - Military-grade standard",
+            "  Recommended for: Government, Enterprise, Sensitive data",
+            "  Time: Medium | Security: High",
+            "",
+            "• NIST 800-88 (1 pass) - Fast and secure",
+            "  Recommended for: General business use, Quick turnaround",
+            "  Time: Fast | Security: Medium-High",
+            "",
+            "• Random 7-Pass - Maximum security",
+            "  Recommended for: Top secret data, Highly sensitive",
+            "  Time: Slow | Security: Maximum",
+            "",
+            "• Quick Wipe (1 pass) - Basic erasure",
+            "  Recommended for: Non-sensitive data, Testing",
+            "  Time: Very Fast | Security: Basic"
+        ])
+        
+        # Troubleshooting
+        self.create_help_section(scroll_frame, "🔧 Troubleshooting", [
+            "Problem: 'Path does not exist' error",
+            "Solution: Ensure device is properly connected and mounted",
+            "",
+            "Problem: Wipe is very slow",
+            "Solution: Large drives take time. DoD 3-pass on 1TB ≈ 2-4 hours",
+            "",
+            "Problem: Duplicate Asset ID error",
+            "Solution: Use unique IDs for each asset (e.g., LAPTOP-001, LAPTOP-002)",
+            "",
+            "Problem: Cannot add to queue",
+            "Solution: Check all required fields (*) are filled",
+            "",
+            "Problem: Wipe failed on specific file",
+            "Solution: File may be locked. Close all applications and retry"
+        ])
+        
+        # Best Practices
+        self.create_help_section(scroll_frame, "✅ Best Practices", [
+            "✓ Always backup important data before wiping",
+            "✓ Verify drive paths carefully before starting",
+            "✓ Use DoD 5220.22-M for most cases",
+            "✓ Keep devices connected until wipe completes",
+            "✓ Generate and save certificates for records",
+            "✓ Export records regularly for compliance",
+            "✓ Use consistent naming for Asset IDs",
+            "✓ Test on non-critical systems first"
+        ])
+        
+        # Contact Support
+        contact_frame = tk.Frame(scroll_frame, bg="#1e293b", relief=tk.FLAT, borderwidth=2)
+        contact_frame.pack(fill=tk.X, pady=20, padx=10)
+        
+        tk.Label(contact_frame, text="📞 Contact Support",
+                font=("Arial", 16, "bold"), bg="#1e293b", fg="white").pack(pady=15)
+        
+        tk.Label(contact_frame, text="Need help? Our support team is here to assist you!",
+                font=("Arial", 10), bg="#1e293b", fg="#94a3b8").pack(pady=5)
+        
+        # Contact details
+        contacts = [
+            ("📧 Email Support", "support@securedatawipe.com", "Primary support channel"),
+            ("📞 Phone Support", "+1 (800) 123-4567", "Mon-Fri, 9AM-6PM EST"),
+            ("💬 Live Chat", "www.securedatawipe.com/chat", "24/7 availability"),
+            ("🎫 Submit Ticket", "www.securedatawipe.com/support", "Track your issues"),
+            ("📚 Documentation", "www.securedatawipe.com/docs", "Full user manual"),
+            ("🎥 Video Tutorials", "www.securedatawipe.com/videos", "Step-by-step guides")
+        ]
+        
+        for icon_title, contact, description in contacts:
+            contact_row = tk.Frame(contact_frame, bg="#334155")
+            contact_row.pack(fill=tk.X, padx=20, pady=8)
+            
+            tk.Label(contact_row, text=icon_title,
+                    font=("Arial", 11, "bold"), bg="#334155", fg="white",
+                    width=18, anchor=tk.W).pack(side=tk.LEFT, padx=10)
+            
+            detail_frame = tk.Frame(contact_row, bg="#334155")
+            detail_frame.pack(side=tk.LEFT, fill=tk.X, expand=True)
+            
+            contact_label = tk.Label(detail_frame, text=contact,
+                                    font=("Arial", 10, "bold"), bg="#334155",
+                                    fg="#60a5fa", cursor="hand2")
+            contact_label.pack(anchor=tk.W)
+            
+            # Make email/links clickable
+            if "@" in contact or "www." in contact:
+                contact_label.bind("<Button-1>", lambda e, c=contact: self.copy_to_clipboard(c))
+                contact_label.bind("<Enter>", lambda e, l=contact_label: l.config(fg="#93c5fd"))
+                contact_label.bind("<Leave>", lambda e, l=contact_label: l.config(fg="#60a5fa"))
+            
+            tk.Label(detail_frame, text=description,
+                    font=("Arial", 9), bg="#334155", fg="#94a3b8").pack(anchor=tk.W)
+        
+        tk.Label(contact_frame, text="", bg="#1e293b").pack(pady=10)
+        
+        # Emergency Support
+        emergency_frame = tk.Frame(scroll_frame, bg="#7f1d1d", relief=tk.FLAT)
+        emergency_frame.pack(fill=tk.X, pady=10, padx=10)
+        
+        tk.Label(emergency_frame, text="🚨 Emergency Support",
+                font=("Arial", 14, "bold"), bg="#7f1d1d", fg="#fef2f2").pack(pady=10)
+        
+        tk.Label(emergency_frame, text="For critical issues during wipe operations:",
+                font=("Arial", 10), bg="#7f1d1d", fg="#fecaca").pack()
+        
+        tk.Label(emergency_frame, text="Emergency Hotline: +1 (800) 911-WIPE",
+                font=("Arial", 12, "bold"), bg="#7f1d1d", fg="white").pack(pady=5)
+        
+        tk.Label(emergency_frame, text="Available 24/7 for urgent data wipe issues",
+                font=("Arial", 9), bg="#7f1d1d", fg="#fecaca").pack(pady=(0, 10))
+        
+        # System Info
+        info_frame = tk.Frame(scroll_frame, bg="#1e293b", relief=tk.FLAT)
+        info_frame.pack(fill=tk.X, pady=10, padx=10)
+        
+        tk.Label(info_frame, text="💻 System Information",
+                font=("Arial", 14, "bold"), bg="#1e293b", fg="white").pack(pady=10)
+        
+        system_info = [
+            ("Software Version", "2.0 Multi-Asset Edition"),
+            ("Operating System", platform.system() + " " + platform.release()),
+            ("Python Version", platform.python_version()),
+            ("Data File Location", os.path.abspath(self.data_file))
+        ]
+        
+        for label, value in system_info:
+            info_row = tk.Frame(info_frame, bg="#1e293b")
+            info_row.pack(fill=tk.X, padx=20, pady=3)
+            
+            tk.Label(info_row, text=f"{label}:",
+                    font=("Arial", 9, "bold"), bg="#1e293b", fg="#94a3b8",
+                    width=20, anchor=tk.W).pack(side=tk.LEFT)
+            
+            tk.Label(info_row, text=value,
+                    font=("Arial", 9), bg="#1e293b", fg="white",
+                    anchor=tk.W).pack(side=tk.LEFT)
+        
+        tk.Label(info_frame, text="", bg="#1e293b").pack(pady=5)
+        
+        # Close button
+        tk.Button(help_window, text="Close", command=help_window.destroy,
+                 bg="#6b7280", fg="white", font=("Arial", 12, "bold"),
+                 padx=40, pady=12, cursor="hand2").pack(pady=20)
+    
+    def create_help_section(self, parent, title, items):
+        """Create a help section with title and items"""
+        section = tk.Frame(parent, bg="#1e293b", relief=tk.FLAT)
+        section.pack(fill=tk.X, pady=10, padx=10)
+        
+        tk.Label(section, text=title,
+                font=("Arial", 14, "bold"), bg="#3b82f6", fg="white").pack(fill=tk.X, pady=12)
+        
+        for item in items:
+            if item == "":
+                tk.Label(section, text="", bg="#1e293b", height=1).pack()
+            else:
+                tk.Label(section, text=item,
+                        font=("Arial", 10), bg="#1e293b", fg="white",
+                        anchor=tk.W, justify=tk.LEFT).pack(fill=tk.X, padx=20, pady=2)
+        
+        tk.Label(section, text="", bg="#1e293b").pack(pady=5)
+    
+    def copy_to_clipboard(self, text):
+        """Copy text to clipboard"""
+        self.root.clipboard_clear()
+        self.root.clipboard_append(text)
+        messagebox.showinfo("Copied", f"Copied to clipboard:\n{text}")
     
     def browse_drive(self):
         """Browse for drive/folder"""
